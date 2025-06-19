@@ -1,0 +1,65 @@
+import weka.core.Instances;
+import weka.core.converters.ConverterUtils.DataSource;
+import weka.classifiers.functions.LinearRegression;
+import weka.classifiers.Evaluation;
+
+import java.util.Scanner;
+import java.util.Random;
+
+public class carbonemission {
+
+    public static void main(String[] args) {
+        try {
+            DataSource source = new DataSource("carbon_emission.arff");
+            Instances data = source.getDataSet();
+
+            if (data.classIndex() == -1)
+                data.setClassIndex(data.numAttributes() - 1);
+
+            LinearRegression model = new LinearRegression();
+            model.buildClassifier(data);
+            System.out.println("Model trained successfully.");
+
+            System.out.println("\nLinear Regression Formula:\n" + model);
+
+            Evaluation eval = new Evaluation(data);
+            eval.crossValidateModel(model, data, 10, new Random(1));
+
+            System.out.println("\nEvaluation:");
+            System.out.println("Correlation Coefficient: " + eval.correlationCoefficient());
+            System.out.println("Root Mean Squared Error: " + eval.rootMeanSquaredError());
+
+            Scanner sc = new Scanner(System.in);
+            System.out.println("\nEnter new values for prediction:");
+            System.out.print("Engine Size: ");
+            double engine = sc.nextDouble();
+
+            System.out.print("Cylinders: ");
+            double cyl = sc.nextDouble();
+
+            System.out.print("Fuel Consumption: ");
+            double fuel = sc.nextDouble();
+
+            String arffHeader = "@relation carbon_emission\n" +
+                    "@attribute engine_size numeric\n" +
+                    "@attribute cylinders numeric\n" +
+                    "@attribute fuel_consumption numeric\n" +
+                    "@attribute co2_emissions numeric\n\n" +
+                    "@data\n";
+
+            String instanceData = engine + "," + cyl + "," + fuel + ",?";
+
+            DataSource newSource = new DataSource(
+                    new java.io.StringReader(arffHeader + instanceData)
+            );
+            Instances newData = newSource.getDataSet();
+            newData.setClassIndex(newData.numAttributes() - 1);
+
+            double prediction = model.classifyInstance(newData.firstInstance());
+            System.out.printf("Predicted CO₂ Emission: %.2f g/km\n", prediction);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
